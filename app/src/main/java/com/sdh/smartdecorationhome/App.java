@@ -1,8 +1,11 @@
 package com.sdh.smartdecorationhome;
 
 import android.app.Application;
-import android.content.Context;
+import android.util.Log;
 
+import com.blankj.utilcode.util.CrashUtils;
+import com.blankj.utilcode.util.Utils;
+import com.sdh.smartdecorationhome.utils.SharePreferenceStorageService;
 import com.zhy.http.okhttp.OkHttpUtils;
 
 import java.util.concurrent.TimeUnit;
@@ -10,16 +13,19 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 
 /**
- * Created by xulih on 2017/4/11.
+ * Created by Alex on 2017/4/11.
  */
 
 public class App extends Application {
 
-    private static Context context;
+    private static App sInstance;
+    private SharePreferenceStorageService sharePreference;
+
 
     @Override
     public void onCreate() {
         super.onCreate();
+        sInstance = this;
 
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
                 .connectTimeout(10000L, TimeUnit.MILLISECONDS)
@@ -29,10 +35,26 @@ public class App extends Application {
 
         OkHttpUtils.initClient(okHttpClient);
 
-        context = getApplicationContext();
+        //初始化全局缓存
+        sharePreference = SharePreferenceStorageService.newInstance(sInstance);
+
+        //初始化AndroidUtilCode
+        Utils.init(sInstance);
+
+        //捕获崩溃异常
+        CrashUtils.getInstance().init();
     }
 
-    public static Context getContext() {
-        return context;
+    /**
+     * @return ApplicationController singleton instance
+     */
+    public static synchronized App getInstance() {
+        return sInstance;
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        Log.d("Application", "Memory is low!");
     }
 }
